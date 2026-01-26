@@ -36,29 +36,32 @@ Implementing designs accurately requires constant reference to Figma. This MCP s
 claude mcp add --transport stdio figma -- npx -y @rui.branco/figma-mcp
 ```
 
-### Step 2: Configure Credentials
+### Step 2: Get Your Figma Token
 
-Run the setup to configure your Figma token:
+1. Go to [Figma Account Settings](https://www.figma.com/settings)
+2. Scroll down to **"Personal access tokens"**
+3. Click **"Generate new token"**
+4. Enter a description (e.g., "Claude Code MCP")
+5. Click **"Generate token"**
+6. Copy the token (you won't be able to see it again)
+
+### Step 3: Configure Credentials
+
+Run the setup with your token:
 
 ```bash
 npx @rui.branco/figma-mcp setup "YOUR_FIGMA_TOKEN"
 ```
 
-Or run interactively:
+Or run interactively (will prompt for the token):
 
 ```bash
 npx @rui.branco/figma-mcp setup
 ```
 
-To get your **Personal Access Token**:
-1. Go to [Figma Settings](https://www.figma.com/settings)
-2. Scroll to "Personal access tokens"
-3. Click "Generate new token"
-4. Copy and paste the token
+### Step 4: Verify
 
-### Step 3: Verify
-
-Restart Claude Code and run `/mcp` to verify the server is loaded.
+Restart Claude Code and run `/mcp` to verify the server is connected.
 
 ### Alternative: Manual Installation
 

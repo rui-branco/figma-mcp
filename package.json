@@ -1,6 +1,6 @@
 {
   "name": "@rui.branco/figma-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Figma MCP server for Claude Code - fetch designs, export frames, and view specs",
   "main": "index.js",
   "bin": {
