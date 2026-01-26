@@ -21,22 +21,39 @@ if (!fs.existsSync(exportsDir)) {
   fs.mkdirSync(exportsDir, { recursive: true });
 }
 
-async function figmaFetch(endpoint) {
-  const response = await fetch(`${FIGMA_API}${endpoint}`, {
-    headers: { "X-Figma-Token": config.token },
-  });
-  if (!response.ok) {
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function figmaFetch(endpoint, { maxRetries = 3 } = {}) {
+  let attempts = 0;
+
+  while (true) {
+    const response = await fetch(`${FIGMA_API}${endpoint}`, {
+      headers: { "X-Figma-Token": config.token },
+    });
+
+    if (response.ok) {
+      return response.json();
+    }
+
     if (response.status === 429) {
-      throw new Error("Figma API rate limit exceeded. Please wait a few minutes and try again.");
-    } else if (response.status === 403) {
+      if (attempts++ >= maxRetries) {
+        const retryAfter = response.headers.get("retry-after") || "60";
+        throw new Error(`Figma API rate limit exceeded. Try again in ${retryAfter} seconds.`);
+      }
+      const retryAfterSec = Number(response.headers.get("retry-after")) || 10;
+      await sleep(retryAfterSec * 1000);
+      continue;
+    }
+
+    if (response.status === 403) {
       throw new Error("Figma access denied. Check your token or file permissions.");
-    } else if (response.status === 404) {
+    }
+    if (response.status === 404) {
       throw new Error("Figma file not found. Check the URL.");
     }
     const text = await response.text();
     throw new Error(`Figma API error: ${response.status} - ${text}`);
   }
-  return response.json();
 }
 
 function normalizeNodeId(nodeId) {
