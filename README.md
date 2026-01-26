@@ -33,7 +33,8 @@ Implementing designs accurately requires constant reference to Figma. This MCP s
 ### Quick Setup
 
 ```bash
-# Clone the repository
+# Clone to ~/.config (recommended)
+cd ~/.config
 git clone https://github.com/rui-branco/figma-mcp.git
 cd figma-mcp
 
@@ -66,11 +67,13 @@ Add to your `~/.claude.json`:
     "figma": {
       "type": "stdio",
       "command": "node",
-      "args": ["/path/to/figma-mcp/index.js"]
+      "args": ["~/.config/figma-mcp/index.js"]
     }
   }
 }
 ```
+
+> **Note:** If you cloned to a different location, update the path accordingly.
 
 Restart Claude Code to load the MCP server.
 
