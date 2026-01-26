@@ -30,52 +30,51 @@ Implementing designs accurately requires constant reference to Figma. This MCP s
 - [Claude Code](https://claude.ai/code) CLI
 - Figma account with API access
 
-### Quick Setup
+### Step 1: Add to Claude Code
 
 ```bash
-# Clone to ~/.config (recommended)
-cd ~/.config
-git clone https://github.com/rui-branco/figma-mcp.git
-cd figma-mcp
-
-# Install dependencies
-npm install
-
-# Run interactive setup
-node setup.js
+claude mcp add --transport stdio figma -- npx -y @rui.branco/figma-mcp
 ```
 
-The setup will prompt for your **Personal Access Token**:
+### Step 2: Configure Credentials
+
+Run the setup to configure your Figma token:
+
+```bash
+npx @rui.branco/figma-mcp setup "YOUR_FIGMA_TOKEN"
+```
+
+Or run interactively:
+
+```bash
+npx @rui.branco/figma-mcp setup
+```
+
+To get your **Personal Access Token**:
 1. Go to [Figma Settings](https://www.figma.com/settings)
 2. Scroll to "Personal access tokens"
 3. Click "Generate new token"
 4. Copy and paste the token
 
-### Alternative: Command-Line Setup
+### Step 3: Verify
+
+Restart Claude Code and run `/mcp` to verify the server is loaded.
+
+### Alternative: Manual Installation
+
+If you prefer to install manually:
 
 ```bash
-node setup.js "YOUR_FIGMA_TOKEN"
+git clone https://github.com/rui-branco/figma-mcp.git ~/.config/figma-mcp
+cd ~/.config/figma-mcp && npm install
+node setup.js
 ```
 
-### Claude Code Configuration
+Then add to Claude Code:
 
-Add to your `~/.claude.json`:
-
-```json
-{
-  "mcpServers": {
-    "figma": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["~/.config/figma-mcp/index.js"]
-    }
-  }
-}
+```bash
+claude mcp add --transport stdio figma -- node $HOME/.config/figma-mcp/index.js
 ```
-
-> **Note:** If you cloned to a different location, update the path accordingly.
-
-Restart Claude Code to load the MCP server.
 
 ## Usage
 

@@ -1,14 +1,32 @@
 {
-  "name": "server",
+  "name": "@rui.branco/figma-mcp",
   "version": "1.0.0",
+  "description": "Figma MCP server for Claude Code - fetch designs, export frames, and view specs",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "bin": {
+    "figma-mcp": "./index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "files": [
+    "index.js",
+    "setup.js"
+  ],
+  "scripts": {
+    "setup": "node setup.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "figma",
+    "claude",
+    "claude-code",
+    "design"
+  ],
+  "author": "Rui Branco",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rui-branco/figma-mcp.git"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.3",
     "node-fetch": "^2.7.0"
