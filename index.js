@@ -7,7 +7,9 @@ if (process.argv[2] === "setup") {
 }
 
 const { Server } = require("@modelcontextprotocol/sdk/server/index.js");
-const { StdioServerTransport } = require("@modelcontextprotocol/sdk/server/stdio.js");
+const {
+  StdioServerTransport,
+} = require("@modelcontextprotocol/sdk/server/stdio.js");
 const {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -15,6 +17,26 @@ const {
 const fs = require("fs");
 const path = require("path");
 const fetch = require("node-fetch");
+const { spawn, execSync } = require("child_process");
+
+// Auto-update
+const PKG_NAME = "@rui.branco/figma-mcp";
+const PKG_VERSION = "1.0.2";
+try {
+  const latest = execSync(`npm view ${PKG_NAME} version`, {
+    stdio: "pipe",
+    timeout: 5000,
+  })
+    .toString()
+    .trim();
+  if (latest && latest !== PKG_VERSION) {
+    const child = spawn("npm", ["install", "-g", `${PKG_NAME}@${latest}`], {
+      stdio: "ignore",
+      detached: true,
+    });
+    child.unref();
+  }
+} catch {}
 
 // Load config
 const configPath = path.join(process.env.HOME, ".config/figma-mcp/config.json");
@@ -46,10 +68,13 @@ async function figmaFetch(endpoint, { maxRetries = 3, maxWaitSec = 30 } = {}) {
 
       // Don't retry if wait is too long (monthly limit) or too many attempts
       if (retryAfterSec > maxWaitSec || attempts++ >= maxRetries) {
-        const waitTime = retryAfterSec > 3600
-          ? `${Math.round(retryAfterSec / 3600)} hours (monthly limit reached)`
-          : `${retryAfterSec} seconds`;
-        throw new Error(`Figma API rate limit exceeded. Try again in ${waitTime}.`);
+        const waitTime =
+          retryAfterSec > 3600
+            ? `${Math.round(retryAfterSec / 3600)} hours (monthly limit reached)`
+            : `${retryAfterSec} seconds`;
+        throw new Error(
+          `Figma API rate limit exceeded. Try again in ${waitTime}.`,
+        );
       }
 
       await sleep(retryAfterSec * 1000);
@@ -57,7 +82,9 @@ async function figmaFetch(endpoint, { maxRetries = 3, maxWaitSec = 30 } = {}) {
     }
 
     if (response.status === 403) {
-      throw new Error("Figma access denied. Check your token or file permissions.");
+      throw new Error(
+        "Figma access denied. Check your token or file permissions.",
+      );
     }
     if (response.status === 404) {
       throw new Error("Figma file not found. Check the URL.");
@@ -78,7 +105,11 @@ function parseFigmaUrl(url) {
 
   let fileKey = null;
   for (let i = 0; i < pathParts.length; i++) {
-    if (pathParts[i] === "file" || pathParts[i] === "design" || pathParts[i] === "proto") {
+    if (
+      pathParts[i] === "file" ||
+      pathParts[i] === "design" ||
+      pathParts[i] === "proto"
+    ) {
       fileKey = pathParts[i + 1];
       break;
     }
@@ -97,12 +128,14 @@ async function getFileInfo(fileKey) {
 }
 
 async function getNodeInfo(fileKey, nodeId, depth = 2) {
-  return await figmaFetch(`/files/${fileKey}/nodes?ids=${encodeURIComponent(nodeId)}&depth=${depth}`);
+  return await figmaFetch(
+    `/files/${fileKey}/nodes?ids=${encodeURIComponent(nodeId)}&depth=${depth}`,
+  );
 }
 
 async function exportImage(fileKey, nodeId, format = "png", scale = 2) {
   const exportData = await figmaFetch(
-    `/images/${fileKey}?ids=${encodeURIComponent(nodeId)}&format=${format}&scale=${scale}`
+    `/images/${fileKey}?ids=${encodeURIComponent(nodeId)}&format=${format}&scale=${scale}`,
   );
 
   if (exportData.err) throw new Error(`Export error: ${exportData.err}`);
@@ -111,7 +144,8 @@ async function exportImage(fileKey, nodeId, format = "png", scale = 2) {
   if (!imageUrl) throw new Error("No image URL returned");
 
   const response = await fetch(imageUrl);
-  if (!response.ok) throw new Error(`Failed to download image: ${response.status}`);
+  if (!response.ok)
+    throw new Error(`Failed to download image: ${response.status}`);
 
   const buffer = await response.buffer();
 
@@ -124,10 +158,15 @@ async function exportImage(fileKey, nodeId, format = "png", scale = 2) {
 }
 
 // Export multiple nodes in one API call (more efficient)
-async function exportMultipleImages(fileKey, nodeIds, format = "png", scale = 2) {
+async function exportMultipleImages(
+  fileKey,
+  nodeIds,
+  format = "png",
+  scale = 2,
+) {
   const idsParam = nodeIds.join(",");
   const exportData = await figmaFetch(
-    `/images/${fileKey}?ids=${encodeURIComponent(idsParam)}&format=${format}&scale=${scale}`
+    `/images/${fileKey}?ids=${encodeURIComponent(idsParam)}&format=${format}&scale=${scale}`,
   );
 
   if (exportData.err) throw new Error(`Export error: ${exportData.err}`);
@@ -160,7 +199,13 @@ function findExportableChildren(doc, minSize = 100) {
   if (!doc.children) return children;
 
   for (const child of doc.children) {
-    const isExportable = ["FRAME", "COMPONENT", "COMPONENT_SET", "GROUP", "SECTION"].includes(child.type);
+    const isExportable = [
+      "FRAME",
+      "COMPONENT",
+      "COMPONENT_SET",
+      "GROUP",
+      "SECTION",
+    ].includes(child.type);
     const bb = child.absoluteBoundingBox;
     const hasSize = bb && bb.width >= minSize && bb.height >= minSize;
 
@@ -180,8 +225,8 @@ function findExportableChildren(doc, minSize = 100) {
 async function getFigmaDesign(url, options = {}) {
   const {
     exportImage: shouldExport = true,
-    exportChildren = true,  // NEW: export child frames separately
-    maxChildren = 10,       // NEW: limit number of children to export
+    exportChildren = true, // NEW: export child frames separately
+    maxChildren = 10, // NEW: limit number of children to export
     scale = 2,
   } = options;
 
@@ -222,26 +267,35 @@ async function getFigmaDesign(url, options = {}) {
         // Export logic
         if (shouldExport) {
           // If frame has exportable children and is large, export children instead
-          const isLargeFrame = doc.absoluteBoundingBox &&
-            (doc.absoluteBoundingBox.width > 1500 || doc.absoluteBoundingBox.height > 2000);
+          const isLargeFrame =
+            doc.absoluteBoundingBox &&
+            (doc.absoluteBoundingBox.width > 1500 ||
+              doc.absoluteBoundingBox.height > 2000);
 
           if (exportChildren && exportableChildren.length > 0 && isLargeFrame) {
             output += `\n### Exported Sections:\n`;
 
             // Export children (up to maxChildren)
             const childrenToExport = exportableChildren.slice(0, maxChildren);
-            const nodeIds = childrenToExport.map(c => c.id);
+            const nodeIds = childrenToExport.map((c) => c.id);
 
             try {
-              const exportedImages = await exportMultipleImages(fileKey, nodeIds, "png", scale);
+              const exportedImages = await exportMultipleImages(
+                fileKey,
+                nodeIds,
+                "png",
+                scale,
+              );
 
               for (const img of exportedImages) {
-                const childInfo = childrenToExport.find(c => c.id === img.nodeId);
+                const childInfo = childrenToExport.find(
+                  (c) => c.id === img.nodeId,
+                );
                 output += `- ${childInfo?.name || img.nodeId}: ${img.localPath}\n`;
                 images.push({
                   path: img.localPath,
                   buffer: img.buffer,
-                  name: childInfo?.name || img.nodeId
+                  name: childInfo?.name || img.nodeId,
                 });
               }
 
@@ -255,7 +309,12 @@ async function getFigmaDesign(url, options = {}) {
             // Export the whole frame
             output += `\n### Exported Image:\n`;
             try {
-              const { localPath, buffer } = await exportImage(fileKey, nodeId, "png", scale);
+              const { localPath, buffer } = await exportImage(
+                fileKey,
+                nodeId,
+                "png",
+                scale,
+              );
               output += `Local path: ${localPath}\n`;
               images.push({ path: localPath, buffer, name: doc.name });
             } catch (e) {
@@ -282,7 +341,7 @@ async function getFigmaDesign(url, options = {}) {
 
 const server = new Server(
   { name: "figma-mcp", version: "1.0.0" },
-  { capabilities: { tools: {} } }
+  { capabilities: { tools: {} } },
 );
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -290,15 +349,29 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     tools: [
       {
         name: "figma_get_design",
-        description: "Fetch a Figma design from a URL. For large frames with sections, automatically exports each section separately for better detail.",
+        description:
+          "Fetch a Figma design from a URL. For large frames with sections, automatically exports each section separately for better detail.",
         inputSchema: {
           type: "object",
           properties: {
             url: { type: "string", description: "The Figma URL" },
-            exportImage: { type: "boolean", description: "Export images (default: true)" },
-            exportChildren: { type: "boolean", description: "Export child sections separately for large frames (default: true)" },
-            maxChildren: { type: "number", description: "Max sections to export (default: 10)" },
-            scale: { type: "number", description: "Export scale 1-4 (default: 2)" },
+            exportImage: {
+              type: "boolean",
+              description: "Export images (default: true)",
+            },
+            exportChildren: {
+              type: "boolean",
+              description:
+                "Export child sections separately for large frames (default: true)",
+            },
+            maxChildren: {
+              type: "number",
+              description: "Max sections to export (default: 10)",
+            },
+            scale: {
+              type: "number",
+              description: "Export scale 1-4 (default: 2)",
+            },
           },
           required: ["url"],
         },
@@ -310,8 +383,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           type: "object",
           properties: {
             fileKey: { type: "string", description: "The Figma file key" },
-            nodeId: { type: "string", description: "The node ID (e.g., '123-456' or '123:456')" },
-            format: { type: "string", enum: ["png", "svg", "pdf", "jpg"], description: "Format (default: png)" },
+            nodeId: {
+              type: "string",
+              description: "The node ID (e.g., '123-456' or '123:456')",
+            },
+            format: {
+              type: "string",
+              enum: ["png", "svg", "pdf", "jpg"],
+              description: "Format (default: png)",
+            },
             scale: { type: "number", description: "Scale 0.01-4 (default: 2)" },
           },
           required: ["fileKey", "nodeId"],
@@ -350,13 +430,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         args.fileKey,
         nodeId,
         args.format || "png",
-        args.scale || 2
+        args.scale || 2,
       );
 
       return {
         content: [
           { type: "text", text: `Exported to: ${localPath}` },
-          { type: "image", data: buffer.toString("base64"), mimeType: "image/png" },
+          {
+            type: "image",
+            data: buffer.toString("base64"),
+            mimeType: "image/png",
+          },
         ],
       };
     } else {
