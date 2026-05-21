@@ -1,7 +1,7 @@
 {
   "name": "@rui.branco/figma-mcp",
   "version": "1.0.2",
-  "description": "Figma MCP server for Claude Code - fetch designs, export frames, and view specs",
+  "description": "Figma MCP server for any MCP-compatible AI client (Claude Code, Codex, Antigravity, Cursor, etc.) - fetch designs, export frames, and view specs",
   "main": "index.js",
   "bin": {
     "figma-mcp": "./index.js"

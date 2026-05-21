@@ -1,6 +1,6 @@
 # Figma MCP Server
 
-A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that brings Figma designs directly into Claude Code. View design specifications, export frames as images, and reference visual context without leaving your development environment.
+A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that brings Figma designs directly into any MCP-compatible AI client — Claude Code, Codex CLI, Google's Antigravity (Gemini), Cursor, Windsurf, Zed, and others. View design specifications, export frames as images, and reference visual context without leaving your development environment.
 
 ## Overview
 
@@ -27,21 +27,45 @@ Implementing designs accurately requires constant reference to Figma. This MCP s
 ### Prerequisites
 
 - Node.js 18+
-- [Claude Code](https://claude.ai/code) CLI
+- An MCP-compatible AI client (see [Step 1](#step-1-register-with-your-mcp-client) below)
 - Figma account with API access
 
-### Step 1: Add to Claude Code
+### Step 1: Register with your MCP client
+
+Pick the snippet for your client. All of them launch the server over stdio.
+
+**Claude Code:**
 
 ```bash
 claude mcp add --transport stdio figma -- npx -y @rui.branco/figma-mcp
 ```
+
+**Codex CLI:** add to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.figma]
+command = "npx"
+args = ["-y", "@rui.branco/figma-mcp"]
+```
+
+**Google Antigravity / Gemini CLI:** add to `~/.gemini/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "figma": { "command": "npx", "args": ["-y", "@rui.branco/figma-mcp"] }
+  }
+}
+```
+
+**Cursor, Windsurf, Zed, Cline, Continue, etc.:** add the same `command`/`args` pair to whatever JSON config that client uses for MCP servers (the exact path varies, but the shape is standard across clients).
 
 ### Step 2: Get Your Figma Token
 
 1. Go to [Figma Account Settings](https://www.figma.com/settings)
 2. Scroll down to **"Personal access tokens"**
 3. Click **"Generate new token"**
-4. Enter a description (e.g., "Claude Code MCP")
+4. Enter a description (e.g., "figma-mcp")
 5. Click **"Generate token"**
 6. Copy the token (you won't be able to see it again)
 
@@ -61,7 +85,7 @@ npx @rui.branco/figma-mcp setup
 
 ### Step 4: Verify
 
-Restart Claude Code and run `/mcp` to verify the server is connected.
+Restart your AI client and check its MCP status (e.g. `/mcp` in Claude Code, `mcp` in Codex CLI, or the equivalent panel in your client) to verify the server is connected.
 
 ### Alternative: Manual Installation
 
@@ -73,7 +97,7 @@ cd ~/.config/figma-mcp && npm install
 node setup.js
 ```
 
-Then add to Claude Code:
+Then register the local entry point with your MCP client (replace the `npx -y @rui.branco/figma-mcp` command from Step 1 with `node $HOME/.config/figma-mcp/index.js`). Example for Claude Code:
 
 ```bash
 claude mcp add --transport stdio figma -- node $HOME/.config/figma-mcp/index.js
@@ -194,6 +218,6 @@ MIT
 
 ## Related
 
-- [jira-mcp](https://github.com/rui-branco/jira-mcp) - Jira MCP server with Figma integration
+- [jira-mcp](https://github.com/rui-branco/jira-mcp) - Jira MCP server with Figma integration (works with any MCP-compatible AI client)
 - [Model Context Protocol](https://modelcontextprotocol.io/) - MCP specification
 - [Figma API](https://www.figma.com/developers/api) - Figma REST API documentation
